@@ -1,0 +1,157 @@
+// api/register/index.js - Erweiterte Registration mit Email
+import { createClient } from '@supabase/supabase-js';
+import { sendWelcomeEmail, startEmailSequence } from '../../lib/email.js';
+
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_ANON_KEY
+);
+
+export default async function handler(req, res) {
+  // CORS Headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  try {
+    const { name, email, phone, company, coaching_experience, bio } = req.body;
+
+    // Input Validation
+    if (!name || !email) {
+      return res.status(400).json({ 
+        error: 'Name und Email sind erforderlich',
+        details: 'Bitte fülle alle Pflichtfelder aus.'
+      });
+    }
+
+    // Email Format Validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ 
+        error: 'Ungültiges Email-Format',
+        details: 'Bitte gib eine gültige Email-Adresse ein.'
+      });
+    }
+
+    // Namen aufteilen (erweiterte Logik)
+    const nameParts = name.trim().split(/\s+/);
+    const firstName = nameParts[0];
+    const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
+
+    // Check for existing email
+    const { data: existingCoach, error: checkError } = await supabase
+      .from('coaches')
+      .select('email')
+      .eq('email', email)
+      .single();
+
+    if (existingCoach) {
+      return res.status(409).json({ 
+        error: 'Email bereits registriert',
+        details: 'Diese Email-Adresse ist bereits in unserem System vorhanden.'
+      });
+    }
+
+    // Coach in Datenbank speichern
+    const { data, error } = await supabase
+      .from('coaches')
+      .insert([
+        {
+          first_name: firstName,
+          last_name: lastName,
+          email: email.toLowerCase().trim(),
+          phone: phone || null,
+          company: company || null,
+          coaching_experience: coaching_experience || null,
+          bio: bio || null,
+          trial_start_date: new Date().toISOString(),
+          trial_end_date: new Date(Date.now() + 14*24*60*60*1000).toISOString(),
+          status: 'trial_active'
+        }
+      ])
+      .select();
+
+    if (error) {
+      console.error('Supabase Error:', error);
+      return res.status(500).json({ 
+        error: 'Registrierung fehlgeschlagen',
+        details: 'Technischer Fehler beim Speichern. Bitte versuche es erneut.'
+      });
+    }
+
+    const newCoach = data[0];
+    console.log('Coach erfolgreich registriert:', newCoach);
+
+    // Welcome Email senden
+    try {
+      await sendWelcomeEmail({
+        email: newCoach.email,
+        first_name: newCoach.first_name,
+        last_name: newCoach.last_name,
+        company: newCoach.company
+      });
+
+      console.log('Welcome Email gesendet an:', newCoach.email);
+
+      // Email-Sequenz starten (Scheduler Integration würde hier kommen)
+      await startEmailSequence(newCoach.id, newCoach.email);
+      
+    } catch (emailError) {
+      console.error('Email Error (nicht kritisch):', emailError);
+      // Email-Fehler führt nicht zum Abbruch der Registrierung
+    }
+
+    // Erfolgreiche Response
+    res.status(201).json({
+      success: true,
+      message: 'Registrierung erfolgreich!',
+      data: {
+        id: newCoach.id,
+        name: `${newCoach.first_name} ${newCoach.last_name}`.trim(),
+        email: newCoach.email,
+        trial_end_date: newCoach.trial_end_date,
+        email_sent: true
+      }
+    });
+
+  } catch (error) {
+    console.error('Registration API Error:', error);
+    res.status(500).json({ 
+      error: 'Interner Server-Fehler',
+      details: 'Ein unerwarteter Fehler ist aufgetreten. Bitte kontaktiere unseren Support.'
+    });
+  }
+}
+
+// Utility function für Email-Sequenz Management
+export async function scheduleFollowUpEmails(coachId, email, startDate) {
+  const emailSchedule = [
+    { days: 1, template: 'day1' },
+    { days: 3, template: 'day3' },
+    { days: 7, template: 'day7' },
+    { days: 10, template: 'day10' },
+    { days: 13, template: 'day13' },
+    { days: 15, template: 'day15' }
+  ];
+
+  // In einer Produktionsumgebung würdest du hier ein Job-Scheduling System verwenden
+  // wie Vercel Cron Jobs, AWS EventBridge, oder einen Service wie Trigger.dev
+  
+  console.log(`Scheduling ${emailSchedule.length} emails for coach ${coachId}`);
+  
+  return emailSchedule.map(schedule => ({
+    coachId,
+    email,
+    template: schedule.template,
+    scheduledFor: new Date(startDate.getTime() + schedule.days * 24 * 60 * 60 * 1000),
+    status: 'scheduled'
+  }));
+}

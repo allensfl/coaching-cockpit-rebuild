@@ -1,0 +1,32 @@
+{
+  "name": "coaching-cockpit-rebuild",
+  "version": "1.0.0",
+  "description": "KI-Coaching Platform mit Email Automation",
+  "scripts": {
+    "build": "next build",
+    "dev": "next dev",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.50.5",
+    "next": "^15.3.5",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "resend": "^3.5.0"
+  },
+  "devDependencies": {
+    "vercel": "^33.0.0"
+  },
+  "keywords": [
+    "coaching",
+    "ai",
+    "email-automation",
+    "saas"
+  ],
+  "author": "KI-Coaching Team",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "version": 2,
+  "routes": [
+    {
+      "src": "/",
+      "dest": "/public/index.html"
+    },
+    {
+      "src": "/main.html",
+      "dest": "/public/main.html"
+    },
+    {
+      "src": "/coach-registration.html",
+      "dest": "/public/coach-registration.html"
+    },
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/$1"
+    }
+  ]
+}

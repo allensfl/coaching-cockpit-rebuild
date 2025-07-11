@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coach Registration - Ki-Online.Coach</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+        }
+        
+        .form-container {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 3rem;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            max-width: 600px;
+            width: 100%;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 2rem;
+            font-size: 2rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #333;
+            font-weight: 500;
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 1rem;
+            transition: opacity 0.3s;
+        }
+        
+        .button:hover { opacity: 0.9; }
+        
+        .back-link {
+            text-align: center;
+            margin-top: 2rem;
+        }
+        
+        .back-link a {
+            color: #667eea;
+            text-decoration: none;
+        }
+        
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 1rem;
+            border-radius: 10px;
+            margin-top: 1rem;
+            display: none;
+        }
+        
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 1rem;
+            border-radius: 10px;
+            margin-top: 1rem;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <h1>🎯 Coach Registration</h1>
+        <p style="text-align: center; margin-bottom: 2rem; color: #666;">
+            Starten Sie Ihr 14-Tage kostenloses Trial
+        </p>
+        
+        <form id="registrationForm">
+            <div class="form-group">
+                <label for="name">Vollständiger Name *</label>
+                <input type="text" id="name" name="name" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="email">E-Mail Adresse *</label>
+                <input type="email" id="email" name="email" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="phone">Telefonnummer</label>
+                <input type="tel" id="phone" name="phone" placeholder="+41 79 XXX XX XX">
+            </div>
+            
+            <div class="form-group">
+                <label for="company">Unternehmen/Praxis</label>
+                <input type="text" id="company" name="company">
+            </div>
+            
+            <div class="form-group">
+                <label for="experience">Coaching-Erfahrung</label>
+                <select id="experience" name="experience">
+                    <option value="">Bitte wählen</option>
+                    <option value="beginner">Anfänger (0-1 Jahre)</option>
+                    <option value="intermediate">Fortgeschritten (2-5 Jahre)</option>
+                    <option value="experienced">Erfahren (5+ Jahre)</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="motivation">Warum interessiert Sie KI-Coaching?</label>
+                <textarea id="motivation" name="motivation" rows="3" placeholder="Ihre Motivation..."></textarea>
+            </div>
+            
+            <button type="submit" class="button">🚀 14-Tage Trial starten</button>
+        </form>
+        
+        <div id="successMessage" class="success-message">
+            ✅ Registration erfolgreich! Bestätigungs-Email wurde versendet.
+        </div>
+        
+        <div id="errorMessage" class="error-message">
+            ❌ Fehler bei der Registrierung. Bitte versuchen Sie es erneut.
+        </div>
+        
+        <div class="back-link">
+            <a href="/main.html">← Zurück zur Hauptseite</a>
+        </div>
+    </div>
+
+   <script>
+document.getElementById('registrationForm').addEventListener('submit', async function(e) {
+    console.log('Form submitted!');
+    e.preventDefault();
+    
+    // Show loading state
+    const submitButton = this.querySelector('button[type="submit"]');
+    const originalText = submitButton.textContent;
+    submitButton.textContent = 'Registrierung läuft...';
+    submitButton.disabled = true;
+    
+    const formData = new FormData(this);
+    const data = Object.fromEntries(formData);
+    
+    try {
+        const response = await fetch('/api/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        
+        if (response.ok) {
+            // Show success message
+            document.getElementById('successMessage').style.display = 'block';
+            document.getElementById('errorMessage').style.display = 'none';
+            this.reset(); // Clear form
+        } else {
+            throw new Error('Registration failed');
+        }
+    } catch (error) {
+        console.log('Error:', error);
+        document.getElementById('errorMessage').style.display = 'block';
+        document.getElementById('successMessage').style.display = 'none';
+    } finally {
+        // Reset button
+        submitButton.textContent = originalText;
+        submitButton.disabled = false;
+    }
+});
+</script>

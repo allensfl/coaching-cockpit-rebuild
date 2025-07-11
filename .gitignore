@@ -1,0 +1,8 @@
+node_modules/
+.next/
+.env.local
+.env
+package-lock.json
+*.log
+.DS_Store
+.vercel
