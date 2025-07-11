@@ -5,3 +5,4 @@ export default function handler(req, res) {
     email_type: req.query.email_type || "test" 
   });
 }
+// API test Fr 11 Jul 2025 19:02:08 CEST
